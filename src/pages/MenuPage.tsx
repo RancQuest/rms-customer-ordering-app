@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMenuCategories, getMenuItems } from '@/api/menu';
 import { useRestaurant } from '@/context/RestaurantContext';
@@ -9,6 +9,8 @@ import {
   IconButton,
   InputAdornment,
   TextField,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -16,6 +18,7 @@ import StarIcon from '@mui/icons-material/Star';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { useCartStore } from '@/store/cartStore';
+import { ItemDetailModal } from '@/components/ItemDetailModal';
 import type { MenuCategory, MenuItem } from '@/types/api';
 
 function formatPrice(price: number) {
@@ -27,11 +30,11 @@ function formatPrice(price: number) {
 
 function MenuItemCard({
   item,
-  basePath,
+  onOpenDetail,
   onQuickAdd,
 }: {
   item: MenuItem;
-  basePath: string;
+  onOpenDetail: (item: MenuItem) => void;
   onQuickAdd: (item: MenuItem, qty: number) => void;
 }) {
   const [qty, setQty] = useState(1);
@@ -40,7 +43,11 @@ function MenuItemCard({
 
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-orange-100 transition hover:shadow-md">
-      <Link to={`${basePath}/item/${item.id}`} className="block">
+      <button
+        type="button"
+        onClick={() => onOpenDetail(item)}
+        className="block w-full cursor-pointer border-0 bg-transparent p-0 text-left"
+      >
         <div className="aspect-[4/3] w-full overflow-hidden bg-gray-100">
           <img
             src={imageUrl}
@@ -67,7 +74,7 @@ function MenuItemCard({
             </span>
           </div>
         </div>
-      </Link>
+      </button>
       <div className="flex items-center justify-between border-t border-orange-50 px-4 py-3">
         <div className="flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50/50">
           <IconButton
@@ -94,20 +101,20 @@ function MenuItemCard({
             <AddIcon fontSize="small" />
           </IconButton>
         </div>
-        <Link
-          to={hasVariants ? `${basePath}/item/${item.id}` : basePath}
-          className="no-underline"
+        <button
+          type="button"
           onClick={(e) => {
-            if (!hasVariants) {
-              e.preventDefault();
+            e.preventDefault();
+            if (hasVariants) {
+              onOpenDetail(item);
+            } else {
               onQuickAdd(item, qty);
             }
           }}
+          className="rounded-xl bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600"
         >
-          <span className="rounded-xl bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600">
-            Add to cart
-          </span>
-        </Link>
+          Add to cart
+        </button>
       </div>
     </div>
   );
@@ -115,12 +122,14 @@ function MenuItemCard({
 
 export function MenuPage() {
   const { restaurantId, api } = useRestaurant();
-  const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
-  const [searchParams] = useSearchParams();
-  const selectedMenuId = searchParams.get('menu');
-  const selectedCategoryId = searchParams.get('category');
+  const { menuId: selectedMenuId, categoryId: selectedCategoryId } = useParams<{
+    restaurantSlug: string;
+    menuId?: string;
+    categoryId?: string;
+  }>();
   const [search, setSearch] = useState('');
-  const base = `/${restaurantSlug}`;
+  const [itemModalId, setItemModalId] = useState<string | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
 
   const { isLoading: catLoading } = useQuery({
@@ -164,6 +173,11 @@ export function MenuPage() {
       selectedModifiers: [],
       selectedVariants: [],
     });
+    setSnackbarOpen(true);
+  };
+
+  const handleOpenDetail = (item: MenuItem) => {
+    setItemModalId(item.id);
   };
 
   if (isLoading) {
@@ -222,12 +236,30 @@ export function MenuPage() {
             <MenuItemCard
               key={item.id}
               item={item}
-              basePath={base}
+              onOpenDetail={handleOpenDetail}
               onQuickAdd={handleQuickAdd}
             />
           ))}
         </div>
       )}
+
+      <ItemDetailModal
+        open={!!itemModalId}
+        itemId={itemModalId}
+        onClose={() => setItemModalId(null)}
+        onAddedToCart={() => setSnackbarOpen(true)}
+      />
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success">
+          Added to cart
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

@@ -19,6 +19,7 @@ export function RestaurantLayout() {
 
   const isMenuOrCart =
     location.pathname === `/${slug}` ||
+    location.pathname.startsWith(`/${slug}/menu/`) ||
     location.pathname === `/${slug}/cart` ||
     location.pathname.startsWith(`/${slug}/item/`);
 

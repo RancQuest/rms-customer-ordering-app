@@ -1,4 +1,4 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMenus, getMenuCategories } from '@/api/menu';
 import { useRestaurant } from '@/context/RestaurantContext';
@@ -6,10 +6,11 @@ import Typography from '@mui/material/Typography';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 export function Breadcrumbs() {
-  const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
-  const [searchParams] = useSearchParams();
-  const menuId = searchParams.get('menu');
-  const categoryId = searchParams.get('category');
+  const { restaurantSlug, menuId, categoryId } = useParams<{
+    restaurantSlug: string;
+    menuId?: string;
+    categoryId?: string;
+  }>();
   const base = `/${restaurantSlug}`;
   const { restaurantId, api } = useRestaurant();
 
@@ -45,37 +46,37 @@ export function Breadcrumbs() {
         className="flex flex-wrap items-center gap-1 py-3 text-sm text-gray-600"
         aria-label="Breadcrumb"
       >
-      <Link
-        to={base}
-        className="text-orange-600 no-underline hover:underline hover:text-orange-700"
-      >
-        Menus
-      </Link>
-      {menu && (
-        <>
-          <NavigateNextIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
-          {categoryId ? (
-            <Link
-              to={`${base}?menu=${menu.id}`}
-              className="text-orange-600 no-underline hover:underline hover:text-orange-700"
-            >
-              {menu.name}
-            </Link>
-          ) : (
-            <Typography component="span" variant="body2" color="text.primary">
-              {menu.name}
+        <Link
+          to={base}
+          className="text-orange-600 no-underline hover:underline hover:text-orange-700"
+        >
+          Menus
+        </Link>
+        {menu && (
+          <>
+            <NavigateNextIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
+            {categoryId ? (
+              <Link
+                to={`${base}/menu/${menu.id}`}
+                className="text-orange-600 no-underline hover:underline hover:text-orange-700"
+              >
+                {menu.name}
+              </Link>
+            ) : (
+              <Typography component="span" variant="body2" color="text.primary">
+                {menu.name}
+              </Typography>
+            )}
+          </>
+        )}
+        {category && (
+          <>
+            <NavigateNextIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
+            <Typography component="span" variant="body2" color="text.primary" fontWeight="500">
+              {category.name}
             </Typography>
-          )}
-        </>
-      )}
-      {category && (
-        <>
-          <NavigateNextIcon sx={{ fontSize: 18, color: '#9ca3af' }} />
-          <Typography component="span" variant="body2" color="text.primary" fontWeight="500">
-            {category.name}
-          </Typography>
-        </>
-      )}
+          </>
+        )}
       </nav>
     </div>
   );

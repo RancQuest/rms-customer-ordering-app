@@ -49,6 +49,8 @@ export default function App() {
             <Route path="/" element={<HomePlaceholder />} />
             <Route path="/:restaurantSlug" element={<RestaurantLayout />}>
               <Route index element={<MenuPage />} />
+              <Route path="menu/:menuId" element={<MenuPage />} />
+              <Route path="menu/:menuId/category/:categoryId" element={<MenuPage />} />
               <Route path="item/:itemId" element={<ItemDetailPage />} />
               <Route path="cart" element={<CartPage />} />
             </Route>

@@ -1,4 +1,4 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMenus, getMenuCategories } from '@/api/menu';
 import { useRestaurant } from '@/context/RestaurantContext';
@@ -36,10 +36,11 @@ function getCategoryName(
 }
 
 export function MenuSidebar() {
-  const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
-  const [searchParams] = useSearchParams();
-  const selectedMenuId = searchParams.get('menu');
-  const selectedCategoryId = searchParams.get('category');
+  const { restaurantSlug, menuId: selectedMenuId, categoryId: selectedCategoryId } = useParams<{
+    restaurantSlug: string;
+    menuId?: string;
+    categoryId?: string;
+  }>();
   const base = `/${restaurantSlug}`;
   const { restaurantId, api, restaurant } = useRestaurant();
 
@@ -121,7 +122,7 @@ export function MenuSidebar() {
           return (
             <section key={menu.id} className="mb-5">
               <Link
-                to={`${base}?menu=${menu.id}`}
+                to={`${base}/menu/${menu.id}`}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left no-underline transition-colors ${
                   isMenuSelected && !selectedCategoryId
                     ? 'bg-orange-500 text-white shadow-sm'
@@ -146,7 +147,7 @@ export function MenuSidebar() {
                     const isCategorySelected =
                       selectedCategoryId === cat.id &&
                       selectedMenuId === menu.id;
-                    const href = `${base}?menu=${menu.id}&category=${cat.id}`;
+                    const href = `${base}/menu/${menu.id}/category/${cat.id}`;
                     return (
                       <li key={cat.id} className="mb-0.5">
                         <Link
