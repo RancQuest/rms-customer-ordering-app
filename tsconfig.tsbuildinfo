@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/api/menu.ts","./src/api/restaurant.ts","./src/context/restaurantcontext.tsx","./src/pages/appbar.tsx","./src/pages/cartpage.tsx","./src/pages/itemdetailpage.tsx","./src/pages/menupage.tsx","./src/pages/restaurantlayout.tsx","./src/store/cartstore.ts","./src/types/api.ts"],"version":"5.6.3"}
