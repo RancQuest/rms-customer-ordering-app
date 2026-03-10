@@ -2,6 +2,7 @@ import { Outlet, useParams, useLocation } from 'react-router-dom';
 import { RestaurantProvider } from '@/context/RestaurantContext';
 import { Header } from './AppBar';
 import { MenuSidebar } from '@/components/MenuSidebar';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 export function RestaurantLayout() {
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
@@ -28,6 +29,9 @@ export function RestaurantLayout() {
         <div className="flex min-h-screen flex-1 flex-col bg-white">
           <Header />
           <main className="min-h-[calc(100vh-64px)] flex-1 pb-8">
+            {isMenuOrCart && location.pathname !== `/${slug}/cart` && (
+              <Breadcrumbs />
+            )}
             <Outlet />
           </main>
         </div>

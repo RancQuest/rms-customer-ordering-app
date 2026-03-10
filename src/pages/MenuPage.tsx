@@ -117,6 +117,7 @@ export function MenuPage() {
   const { restaurantId, api } = useRestaurant();
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
   const [searchParams] = useSearchParams();
+  const selectedMenuId = searchParams.get('menu');
   const selectedCategoryId = searchParams.get('category');
   const [search, setSearch] = useState('');
   const base = `/${restaurantSlug}`;
@@ -132,9 +133,12 @@ export function MenuPage() {
   });
 
   const { data: items = [], isLoading: itemsLoading } = useQuery({
-    queryKey: ['menu-items', restaurantId],
+    queryKey: ['menu-items', restaurantId, selectedMenuId ?? undefined, selectedCategoryId ?? undefined],
     queryFn: async () => {
-      const { data } = await getMenuItems(api, restaurantId!);
+      const { data } = await getMenuItems(api, restaurantId!, {
+        menuId: selectedMenuId ?? undefined,
+        menuCategoryId: selectedCategoryId ?? undefined,
+      });
       return (Array.isArray(data) ? data : []) as MenuItem[];
     },
     enabled: !!restaurantId,
