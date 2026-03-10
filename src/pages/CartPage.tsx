@@ -1,15 +1,21 @@
 import { useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
 import {
   Typography,
   Button,
   Box,
   IconButton,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import { useCartStore } from '@/store/cartStore';
+import { useRestaurant } from '@/context/RestaurantContext';
+import { createOrder } from '@/api/orders';
+import type { CreateOrderDto } from '@/types/order';
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-US', {
@@ -33,7 +39,56 @@ function lineTotal(line: {
 export function CartPage() {
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
   const base = `/${restaurantSlug}`;
-  const { lines, updateQuantity, removeLine, totalPrice, totalItems } = useCartStore();
+  const { restaurant, restaurantId } = useRestaurant();
+  const { lines, updateQuantity, removeLine, totalPrice, totalItems, clearCart } = useCartStore();
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const handleCheckout = async () => {
+    if (!restaurant?.id || !restaurant?.tenantId || !restaurantId) {
+      setCheckoutError('Restaurant information is missing.');
+      return;
+    }
+    setCheckoutError(null);
+    setCheckingOut(true);
+    try {
+      const order: CreateOrderDto = {
+        tenantId: restaurant.tenantId,
+        restaurantId: restaurant.id,
+        items: lines.map((line) => ({
+          menuItemId: line.menuItem.id,
+          menuItemName: line.menuItem.name,
+          basePrice: line.menuItem.basePrice,
+          quantity: line.quantity,
+          selectedVariants: line.selectedVariants.map((v) => ({
+            variantId: v.id,
+            variantName: v.name,
+            priceDelta: v.priceDelta,
+          })),
+          selectedModifiers: line.selectedModifiers.map((m) => ({
+            modifierId: m.id,
+            modifierName: m.name,
+            priceDelta: m.priceDelta,
+          })),
+          specialInstructions: line.specialInstructions,
+          taxRate: 0,
+        })),
+      };
+      const response = await createOrder({ order });
+      clearCart();
+      window.location.href = `${base}?orderPlaced=${response.id}`;
+    } catch (err: unknown) {
+      const message = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string }; status?: number } }).response?.data?.message
+          ?? `Request failed (${(err as { response?: { status?: number } }).response?.status ?? 'error'})`
+        : err instanceof Error
+          ? err.message
+          : 'Checkout failed. Please try again.';
+      setCheckoutError(message);
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   if (totalItems() === 0) {
     return (
@@ -64,6 +119,11 @@ export function CartPage() {
       <Typography variant="h5" fontWeight="bold" className="mb-6 text-gray-800">
         Your order
       </Typography>
+      {checkoutError && (
+        <Alert severity="error" onClose={() => setCheckoutError(null)} sx={{ mb: 2 }}>
+          {checkoutError}
+        </Alert>
+      )}
       <div className="space-y-4">
         {lines.map((line) => (
           <div
@@ -128,6 +188,7 @@ export function CartPage() {
             to={base}
             variant="outlined"
             fullWidth
+            disabled={checkingOut}
             sx={{
               borderRadius: 2,
               borderColor: '#ea580c',
@@ -140,7 +201,9 @@ export function CartPage() {
           <Button
             variant="contained"
             fullWidth
-            disabled
+            disabled={checkingOut}
+            onClick={handleCheckout}
+            startIcon={checkingOut ? <CircularProgress size={20} color="inherit" /> : null}
             sx={{
               borderRadius: 2,
               backgroundColor: '#ea580c',
@@ -148,7 +211,7 @@ export function CartPage() {
               '&:hover': { backgroundColor: '#c2410c' },
             }}
           >
-            Checkout (coming soon)
+            {checkingOut ? 'Placing order…' : 'Checkout'}
           </Button>
         </div>
       </Box>

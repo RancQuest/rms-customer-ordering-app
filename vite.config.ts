@@ -11,7 +11,7 @@ export default defineConfig({
     port: 3001,
     proxy: {
       // Proxy /api to YARP gateway (rms-aspnetcore-microservices). Gateway routes:
-      // /api/restaurants/* -> Restaurant Management, /api/menu/* -> Menu Management.
+      // /api/restaurants/* -> Restaurant Management, /api/menu/* -> Menu Management, /api/orders/* -> Ordering.
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
