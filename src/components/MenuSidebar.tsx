@@ -11,10 +11,7 @@ import {
   BakeryDining,
   RamenDining,
   MenuBook,
-  ExpandMore,
-  ExpandLess,
 } from '@mui/icons-material';
-import { useState } from 'react';
 
 const CATEGORY_ICONS = [
   LunchDining,
@@ -45,9 +42,6 @@ export function MenuSidebar() {
   const selectedCategoryId = searchParams.get('category');
   const base = `/${restaurantSlug}`;
   const { restaurantId, api, restaurant } = useRestaurant();
-  const [expandedMenuIds, setExpandedMenuIds] = useState<Set<string>>(() =>
-    selectedMenuId ? new Set([selectedMenuId]) : new Set()
-  );
 
   const { data: menusResult } = useQuery({
     queryKey: ['menus', restaurantId],
@@ -70,44 +64,37 @@ export function MenuSidebar() {
   const menus: Menu[] = menusResult?.items ?? [];
   const sortedMenus = [...menus].sort((a, b) => a.name.localeCompare(b.name));
 
-  const toggleMenu = (menuId: string) => {
-    setExpandedMenuIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(menuId)) next.delete(menuId);
-      else next.add(menuId);
-      return next;
-    });
-  };
-
   const allSelected = !selectedMenuId && !selectedCategoryId;
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-orange-100 bg-[#faf8f5]">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-[#faf8f5]">
       <Link
         to={base}
-        className="flex items-center gap-2 px-5 py-6 no-underline text-inherit"
+        className="flex items-center gap-3 border-b border-gray-200 px-5 py-5 no-underline text-inherit transition-colors hover:bg-white/60"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white shadow-sm">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white shadow-sm">
           <LunchDining sx={{ fontSize: 24 }} />
         </div>
-        <span className="text-xl font-bold tracking-tight text-gray-900">
+        <span className="truncate text-lg font-semibold tracking-tight text-gray-900">
           {restaurant?.name ?? 'Cafe'}
         </span>
       </Link>
-      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-6">
-        <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+
+      <nav className="flex flex-1 flex-col gap-0 overflow-y-auto px-3 py-4" aria-label="Menu navigation">
+        <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
           Menus
-        </div>
+        </p>
+
         <Link
           to={base}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left no-underline transition-colors ${
+          className={`mb-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-left no-underline transition-colors ${
             allSelected
               ? 'bg-orange-500 text-white shadow-sm'
               : 'text-gray-700 hover:bg-orange-50'
           }`}
         >
           <MenuBook
-            sx={{ fontSize: 22 }}
+            sx={{ fontSize: 20 }}
             className={allSelected ? 'text-white' : 'text-orange-600'}
           />
           <span className="font-medium">All</span>
@@ -130,76 +117,60 @@ export function MenuSidebar() {
                   .map((c) => ({ id: c.id, name: c.name }));
 
           const isMenuSelected = selectedMenuId === menu.id;
-          const isExpanded =
-            expandedMenuIds.has(menu.id) ||
-            isMenuSelected ||
-            (selectedCategoryId &&
-              categoriesToShow.some((c) => c.id === selectedCategoryId));
 
           return (
-            <div key={menu.id} className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-0">
-                <Link
-                  to={`${base}?menu=${menu.id}`}
-                  className={`flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left no-underline transition-colors ${
+            <section key={menu.id} className="mb-5">
+              <Link
+                to={`${base}?menu=${menu.id}`}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left no-underline transition-colors ${
+                  isMenuSelected && !selectedCategoryId
+                    ? 'bg-orange-500 text-white shadow-sm'
+                    : 'text-gray-800 hover:bg-orange-50'
+                }`}
+              >
+                <MenuBook
+                  sx={{ fontSize: 20 }}
+                  className={
                     isMenuSelected && !selectedCategoryId
-                      ? 'bg-orange-500 text-white shadow-sm'
-                      : 'text-gray-700 hover:bg-orange-50'
-                  }`}
-                >
-                  <MenuBook
-                    sx={{ fontSize: 22 }}
-                    className={
-                      isMenuSelected && !selectedCategoryId
-                        ? 'text-white'
-                        : 'text-orange-600'
-                    }
-                  />
-                  <span className="flex-1 font-medium">{menu.name}</span>
-                </Link>
-                {categoriesToShow.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => toggleMenu(menu.id)}
-                    className="rounded p-1 text-gray-500 hover:bg-orange-100 hover:text-orange-700"
-                    aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                  >
-                    {isExpanded ? (
-                      <ExpandLess sx={{ fontSize: 20 }} />
-                    ) : (
-                      <ExpandMore sx={{ fontSize: 20 }} />
-                    )}
-                  </button>
-                )}
-              </div>
-              {isExpanded &&
-                categoriesToShow.map((cat, index) => {
-                  const Icon = getCategoryIcon(index);
-                  const isCategorySelected =
-                    selectedCategoryId === cat.id &&
-                    selectedMenuId === menu.id;
-                  const href = `${base}?menu=${menu.id}&category=${cat.id}`;
-                  return (
-                    <Link
-                      key={cat.id}
-                      to={href}
-                      className={`ml-6 flex items-center gap-3 rounded-xl px-3 py-2 text-left text-sm no-underline transition-colors ${
-                        isCategorySelected
-                          ? 'bg-orange-500 text-white shadow-sm'
-                          : 'text-gray-600 hover:bg-orange-50'
-                      }`}
-                    >
-                      <Icon
-                        sx={{ fontSize: 20 }}
-                        className={
-                          isCategorySelected ? 'text-white' : 'text-orange-600'
-                        }
-                      />
-                      <span className="font-medium">{cat.name}</span>
-                    </Link>
-                  );
-                })}
-            </div>
+                      ? 'text-white'
+                      : 'text-orange-600'
+                  }
+                />
+                <span className="font-medium">{menu.name}</span>
+              </Link>
+
+              {categoriesToShow.length > 0 && (
+                <ul className="mt-1.5 list-none border-l-2 border-orange-200 pl-2" role="list">
+                  {categoriesToShow.map((cat, index) => {
+                    const Icon = getCategoryIcon(index);
+                    const isCategorySelected =
+                      selectedCategoryId === cat.id &&
+                      selectedMenuId === menu.id;
+                    const href = `${base}?menu=${menu.id}&category=${cat.id}`;
+                    return (
+                      <li key={cat.id} className="mb-0.5">
+                        <Link
+                          to={href}
+                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm no-underline transition-colors ${
+                            isCategorySelected
+                              ? 'bg-orange-500 font-medium text-white shadow-sm'
+                              : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'
+                          }`}
+                        >
+                          <Icon
+                            sx={{ fontSize: 18 }}
+                            className={
+                              isCategorySelected ? 'text-white' : 'text-orange-500'
+                            }
+                          />
+                          <span className="truncate">{cat.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
           );
         })}
       </nav>
