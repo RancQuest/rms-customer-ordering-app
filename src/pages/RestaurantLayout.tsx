@@ -1,25 +1,37 @@
-import { Outlet, useParams } from 'react-router-dom';
+import { Outlet, useParams, useLocation } from 'react-router-dom';
 import { RestaurantProvider } from '@/context/RestaurantContext';
 import { Header } from './AppBar';
+import { MenuSidebar } from '@/components/MenuSidebar';
 
 export function RestaurantLayout() {
   const { restaurantSlug } = useParams<{ restaurantSlug: string }>();
+  const location = useLocation();
   const slug = restaurantSlug ?? '';
 
   if (!slug) {
     return (
-      <div className="p-8 text-center text-gray-600">
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8f5] p-8 text-center text-gray-600">
         <p>Enter a restaurant slug in the URL, e.g. /downtown-bistro</p>
       </div>
     );
   }
 
+  const isMenuOrCart =
+    location.pathname === `/${slug}` ||
+    location.pathname === `/${slug}/cart` ||
+    location.pathname.startsWith(`/${slug}/item/`);
+
   return (
     <RestaurantProvider slug={slug}>
-      <Header />
-      <main className="min-h-screen bg-gray-50 pb-20">
-        <Outlet />
-      </main>
+      <div className="flex min-h-screen bg-[#faf8f5]">
+        {isMenuOrCart && <MenuSidebar />}
+        <div className="flex min-h-screen flex-1 flex-col bg-white">
+          <Header />
+          <main className="min-h-[calc(100vh-64px)] flex-1 pb-8">
+            <Outlet />
+          </main>
+        </div>
+      </div>
     </RestaurantProvider>
   );
 }

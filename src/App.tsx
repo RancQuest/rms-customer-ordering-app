@@ -27,9 +27,10 @@ function HomePlaceholder() {
 const theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#2e7d32' },
-    secondary: { main: '#ff6f00' },
+    primary: { main: '#ea580c' },
+    secondary: { main: '#16a34a' },
   },
+  shape: { borderRadius: 12 },
 });
 
 const queryClient = new QueryClient({
